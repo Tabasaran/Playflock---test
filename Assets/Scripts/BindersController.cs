@@ -5,7 +5,9 @@ using UnityEngine;
 public class BindersController : MonoBehaviour
 {
     // To reuse the created binders
-    private static Queue<GameObject> disabledBinders = new Queue<GameObject>();
+    private static Queue<Binder> disabledBinders = new Queue<Binder>();
+
+    private static List<Binder> binders = new List<Binder>();
 
     [SerializeField]
     private GameObject binderPrefab;
@@ -24,7 +26,7 @@ public class BindersController : MonoBehaviour
         {
             if (CheckClickOnRectangle(out Rectangle rectangle))
             {
-                newBinder = CreateBinder().GetComponent<Binder>();
+                newBinder = CreateBinder();
 
                 rectangle.OnMoved += newBinder.UpdateLine;
                 newBinder.Point1 = rectangle.transform;
@@ -34,6 +36,9 @@ public class BindersController : MonoBehaviour
         {
             if (CheckClickOnRectangle(out Rectangle rectangle))
             {
+                if (DeleteBinder(rectangle))
+                    return;
+
                 rectangle.OnMoved += newBinder.UpdateLine;
                 newBinder.Point2 = rectangle.transform;
 
@@ -42,10 +47,27 @@ public class BindersController : MonoBehaviour
             }
             else if (newBinder != null)
             {
-                DeleteBinder(newBinder.gameObject);
+                DeleteBinder(newBinder);
                 newBinder = null;
             }
         }
+    }
+
+    private bool DeleteBinder(Rectangle rectangle)
+    {
+        foreach (var binder in binders)
+        {
+            if (binder.Point1 == rectangle.transform && binder.Point2 == newBinder.Point1
+             || binder.Point1 == newBinder.Point1 && binder.Point2 == rectangle.transform)
+            {
+                DeleteBinder(binder);
+
+                DeleteBinder(newBinder);
+                newBinder = null;
+                return true;
+            }
+        }
+        return false;
     }
 
     private bool CheckClickOnRectangle(out Rectangle rectangle)
@@ -58,22 +80,25 @@ public class BindersController : MonoBehaviour
         return false;
     }
 
-    private GameObject CreateBinder()
+    private Binder CreateBinder()
     {
         if (disabledBinders.Count > 0)
             return disabledBinders.Dequeue();
 
-        var binder = Instantiate(binderPrefab, transform);
+        var binder = Instantiate(binderPrefab, transform).GetComponent<Binder>();
+        binders.Add(binder);
         binder.name = $"Binder{Binder.BindersCount}";
         return binder;
     }
 
-    public static void DeleteBinder(GameObject binder)
+    public static void DeleteBinder(Binder binder)
     {
         if (disabledBinders.Contains(binder))
             return;
 
-        binder.SetActive(false);
+        binder.Point1 = null;
+        binder.Point2 = null;
+        binder.gameObject.SetActive(false);
         disabledBinders.Enqueue(binder);
     }
 }

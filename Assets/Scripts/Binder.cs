@@ -21,7 +21,7 @@ public class Binder : MonoBehaviour
             || Point1.gameObject.activeSelf == false 
             || Point2.gameObject.activeSelf == false)
         {
-            BindersController.DeleteBinder(gameObject);
+            BindersController.DeleteBinder(this);
             return;
         }
 
